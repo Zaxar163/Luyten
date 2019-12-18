@@ -480,7 +480,7 @@ public class OpenFile implements SyntaxConstants {
 		PlainTextOutput plainTextOutput = new PlainTextOutput(stringwriter);
 		plainTextOutput.setUnicodeOutputEnabled(decompilationOptions.getSettings().isUnicodeOutputEnabled());
 		settings.getLanguage().decompileType(type, plainTextOutput, decompilationOptions);
-		setContentPreserveLastScrollPosition(stringwriter.toString());
+		setContentPreserveLastScrollPosition(Luyten.replace(stringwriter.toString()));
 		this.isContentValid = true;
 	}
 
@@ -492,7 +492,7 @@ public class OpenFile implements SyntaxConstants {
 		linkProvider = newLinkProvider;
 
 		linkProvider.generateContent();
-		setContentPreserveLastScrollPosition(linkProvider.getTextContent());
+		setContentPreserveLastScrollPosition(Luyten.replace(linkProvider.getTextContent()));
 		this.isContentValid = true;
 		enableLinks();
 	}

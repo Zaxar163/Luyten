@@ -14,9 +14,14 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -40,9 +45,21 @@ public class Luyten {
 
 	private static final AtomicReference<MainWindow> mainWindowRef = new AtomicReference<>();
 	private static final List<File> pendingFiles = new ArrayList<>();
-
+	public static final Map<String, String> srgs = new ConcurrentHashMap<>();
+	
 	public static void main(String[] args) {
-
+		try (ZipFile f = new ZipFile(args[0])) {
+			for (ZipEntry e : Collections.list(f.entries())) {
+				if (!e.getName().endsWith(".csv")) continue;
+				try (BufferedReader r = new BufferedReader(new InputStreamReader(f.getInputStream(e)))) {
+					r.lines().filter(t -> t != null && !t.trim().isEmpty() && !t.trim().startsWith("#"))
+						.filter(t -> t.lastIndexOf(',') != 0).map(t -> t.split(",")).forEach(t -> srgs.put(t[0], t[1]));
+				}
+			}
+		} catch (Throwable t) {
+			
+		}
+		srgs.remove("searge");
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) {
@@ -50,7 +67,7 @@ public class Luyten {
 		}
 
 		// for TotalCommander External Viewer setting:
-		// javaw -jar "c:\Program Files\Luyten\luyten.jar"
+		// javaw -jar "srgs" "c:\Program Files\Luyten\luyten.jar"
 		// (TC will not complain about temporary file when opening .class from
 		// .zip or .jar)
 		final File fileFromCommandLine = getFileFromCommandLine(args);
@@ -68,6 +85,12 @@ public class Luyten {
 		});
 	}
 
+	
+	public static String replace(String in) {
+		AtomicReference<String> a = new AtomicReference<String>(in);
+		srgs.forEach((k, v) -> a.set(a.get().replace(k, v))); 
+		return a.get();
+	}
 	// Private function which processes all pending files - synchronized on the
 	// list of pending files
 	private static void processPendingFiles() {
@@ -104,8 +127,8 @@ public class Luyten {
 	public static File getFileFromCommandLine(String[] args) {
 		File fileFromCommandLine = null;
 		try {
-			if (args.length > 0) {
-				String realFileName = new File(args[0]).getCanonicalPath();
+			if (args.length > 1) {
+				String realFileName = new File(args[1]).getCanonicalPath();
 				fileFromCommandLine = new File(realFileName);
 			}
 		} catch (Exception e) {
